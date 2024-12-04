@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>AI Photo Search</title>
+        <link rel="stylesheet" href="index.css">
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+        <!-- API Gateway SDK -->
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/axios/dist/axios.standalone.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/sha256.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/hmac.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/enc-base64.js"></script>
+        <script src="https://sdk.amazonaws.com/js/aws-sdk-2.879.0.min.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/url-template/url-template.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+        <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/utils.js"></script>
+    </head>
+    <body>
+        <h1>AI Photo Search</h1>
+        <h5 style="margin: 0px; color: gray; font-weight: 100; align-self: flex-end;">&#40;&#41;</h5>
+
+        <!-- Search Section -->
+        <section id="search-section">
+            <h2 style="margin-top: 0px;">Search Photos</h2>
+            <input type="text" id="search-query" placeholder="What are you looking for today?">
+            <button onclick="searchPhotos()" style="cursor: pointer; width: 100%; color: white; background-color: black; border: none; font-size: 20px; height: 35px; border-radius: 8px;">Search</button>
+            <div id="search-results"></div>
+        </section>
+
+        <!-- Upload Section -->
+        <section id="upload-section">
+            <h2 style="margin-top: 0px;">Upload New Photo</h2>
+            <form id="upload-form" onsubmit="uploadPhoto(event)">
+                <label for="photo-file">Choose Photo:</label>
+                <input type="file" id="photo-file" style="cursor: pointer;" accept="image/*" required>
+                
+                <label for="custom-labels">Custom Labels:</label>
+                <input type="text" id="custom-labels" placeholder="e.g., Sam,Sally">
+                
+                <button type="submit" style="cursor: pointer; display: block; height: 20px; width: 100%; color: white; background-color: black; border: none; font-size: 20px; height: 35px; border-radius: 8px;">Upload Photo</button>
+            </form>
+        </section>
+
+        <!-- App Scripts -->
+        <script src="index.js"></script>
+    </body>
+</html>

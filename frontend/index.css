@@ -1,0 +1,42 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+}
+
+h1 {
+    color: #333;
+}
+
+#custom-labels, #photo-file {
+    display: block;
+    margin-bottom: 10px;
+    margin-top: 3px;
+    height: 25px;
+    font-size: 15px;
+}
+
+section {
+    width: 100%;
+    max-width: 500px;
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+#search-query {
+    height: 25px;
+    font-size: 15px;
+    width: 75%;
+    margin-bottom: 10px;
+}
+
+#search-results img {
+    width: 100px;
+    margin: 10px;
+}

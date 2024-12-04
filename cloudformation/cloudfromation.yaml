@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Infrastructure for Photo Search Application
+
+Resources:
+  # S3 Buckets
+  PhotoStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: photo-storage-naman
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - "http://photo-search-frontend.s3-website-us-east-1.amazonaws.com"
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - OPTIONS
+            AllowedHeaders:
+              - "*"
+            ExposeHeaders:
+              - ETag
+            MaxAge: 3000
+
+  PhotoSearchFrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: photo-search-frontend
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  # IAM Roles
+  IndexPhotosRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: IndexPhotosPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: "arn:aws:s3:::photo-storage-naman/*"
+              - Effect: Allow
+                Action:
+                  - es:ESHttpPut
+                  - es:ESHttpPost
+                  - es:ESHttpDelete
+                Resource: "arn:aws:es:us-east-1:438465145836:domain/photos/*"
+
+  SearchPhotosRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: SearchPhotosPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - es:ESHttpGet
+                Resource: "arn:aws:es:us-east-1:438465145836:domain/photos/*"
+
+  # Lambda Functions
+  IndexPhotosFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: index-photos
+      Runtime: python3.8
+      Role: !GetAtt IndexPhotosRole.Arn
+      Handler: index.lambda_handler
+      Code:
+        S3Bucket: lambda-code-bucket
+        S3Key: index-photos.zip
+      Environment:
+        Variables:
+          ES_HOST: "https://search-photos-yozbvxdyybteo5vwzznzosu2fy.us-east-1.es.amazonaws.com"
+
+  SearchPhotosFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: search-photos
+      Runtime: python3.8
+      Role: !GetAtt SearchPhotosRole.Arn
+      Handler: search.lambda_handler
+      Code:
+        S3Bucket: lambda-code-bucket
+        S3Key: search-photos.zip
+      Environment:
+        Variables:
+          ES_HOST: "https://search-photos-yozbvxdyybteo5vwzznzosu2fy.us-east-1.es.amazonaws.com"
+
+  # API Gateway
+  PhotoSearchApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: photo-search-api
+
+  SearchResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      ParentId: !GetAtt PhotoSearchApi.RootResourceId
+      PathPart: search
+      RestApiId: !Ref PhotoSearchApi
+
+  SearchMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PhotoSearchApi
+      ResourceId: !Ref SearchResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub
+          - arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${LambdaArn}/invocations
+          - Region: !Ref AWS::Region
+            LambdaArn: !GetAtt SearchPhotosFunction.Arn
+
+  # OpenSearch Domain
+  OpenSearchDomain:
+    Type: AWS::OpenSearchService::Domain
+    Properties:
+      DomainName: photos
+      EngineVersion: "OpenSearch_1.0"
+      NodeToNodeEncryptionOptions:
+        Enabled: true
+      EncryptionAtRestOptions:
+        Enabled: true
+      AccessPolicies:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: "arn:aws:iam::438465145836:role/service-role/index-photos-role-0ee1zsr9"
+            Action: "es:ESHttp*"
+            Resource: "arn:aws:es:us-east-1:438465145836:domain/photos/*"
+
+Outputs:
+  PhotoStorageBucket:
+    Value: !Ref PhotoStorageBucket
+    Description: "The S3 bucket for storing photos"
+
+  PhotoSearchFrontendBucket:
+    Value: !Ref PhotoSearchFrontendBucket
+    Description: "The S3 bucket for hosting the frontend"
+
+  IndexPhotosFunction:
+    Value: !Ref IndexPhotosFunction
+    Description: "The Lambda function for indexing photos"
+
+  SearchPhotosFunction:
+    Value: !Ref SearchPhotosFunction
+    Description: "The Lambda function for searching photos"
+
+  PhotoSearchApi:
+    Value: !Ref PhotoSearchApi
+    Description: "The API Gateway for the photo search application"
